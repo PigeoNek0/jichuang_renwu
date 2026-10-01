@@ -1,0 +1,21 @@
+# Python 虚拟环境（体积很大，且包含 ngspice 的 DLL，不需要入库）
+# 交付要求是三个 .py 文件 + README，环境由使用者自己 pip install PySpice 重建
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# PySpice / ngspice 运行产物
+*.raw
+*.log
+spinit
+
+# matplotlib 缓存
+mplcache/
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
