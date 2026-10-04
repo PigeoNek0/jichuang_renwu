@@ -8,7 +8,6 @@
     :root {
       --bg: #1a1a2e;
       --panel: #16213e;
-      --grid: #2a2a40;
       --snake: #4ade80;
       --snake-head: #86efac;
       --food: #f87171;
@@ -18,13 +17,14 @@
       --border: #3b3b5c;
       --overlay-bg: rgba(10, 10, 20, 0.8);
       --btn-primary-fg: #0b1f12;
+      --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      --bg-glow: rgba(129, 140, 248, 0.16);
     }
 
     /* 浅色主题 */
     [data-theme="light"] {
       --bg: #f1f5f9;
       --panel: #ffffff;
-      --grid: #cbd5e1;
       --snake: #16a34a;
       --snake-head: #22c55e;
       --food: #ef4444;
@@ -34,6 +34,8 @@
       --border: #cbd5e1;
       --overlay-bg: rgba(255, 255, 255, 0.85);
       --btn-primary-fg: #ffffff;
+      --shadow: 0 8px 28px rgba(15, 23, 42, 0.10);
+      --bg-glow: rgba(148, 163, 184, 0.22);
     }
 
     * { box-sizing: border-box; }
@@ -46,19 +48,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: var(--bg);
+      background:
+        radial-gradient(1100px 520px at 50% -8%, var(--bg-glow), transparent 65%),
+        var(--bg);
       color: var(--text);
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       overscroll-behavior: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-user-select: none;
       user-select: none;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     h1 {
       margin: 0 0 12px;
       font-size: 1.6rem;
       letter-spacing: 1px;
+      font-weight: 800;
     }
 
     .score {
@@ -75,10 +81,14 @@
     .validity {
       margin: 0 0 12px;
       font-size: 0.85rem;
+      line-height: 1.6;
+      padding: 2px 12px;
+      border-radius: 999px;
+      border: 1px solid transparent;
     }
 
-    .validity.valid { color: var(--snake); }
-    .validity.invalid { color: var(--food); }
+    .validity.valid { color: var(--snake); border-color: var(--snake); }
+    .validity.invalid { color: var(--food); border-color: var(--food); }
 
     .game {
       display: flex;
@@ -101,8 +111,10 @@
       background: var(--panel);
       border: 2px solid var(--border);
       border-radius: 8px;
+      box-shadow: var(--shadow);
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .overlay {
@@ -115,6 +127,14 @@
       gap: 8px;
       background: var(--overlay-bg);
       border-radius: 8px;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .overlay-title {
@@ -156,19 +176,25 @@
       border-radius: 6px;
       cursor: pointer;
       touch-action: manipulation;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.15s, border-color 0.15s, transform 0.06s, box-shadow 0.15s;
     }
 
     .btn:hover { border-color: var(--muted); }
+    .btn:active { transform: translateY(1px); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:disabled:active { transform: none; }
 
     .btn-primary {
       background: var(--snake);
       color: var(--btn-primary-fg);
       font-weight: 700;
       border-color: var(--snake);
+      box-shadow: 0 2px 10px rgba(74, 222, 128, 0.35);
     }
-    .btn-primary:hover { background: var(--snake-head); }
+    .btn-primary:hover {
+      background: var(--snake-head);
+      border-color: var(--snake-head);
+    }
 
     .hidden { display: none; }
 
@@ -237,6 +263,7 @@
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 8px;
+      box-shadow: var(--shadow);
     }
 
     .modal-head {
@@ -288,8 +315,10 @@
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 8px;
+      box-shadow: var(--shadow);
       min-width: 220px;
       max-width: 260px;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .panel-title {
@@ -313,6 +342,16 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .stepper-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .stepper-buttons .btn-step {
+      flex: 1;
+      min-width: 0;
     }
 
     .btn-step {
@@ -398,20 +437,24 @@
 
   <aside class="panel" aria-label="胜利目标设置">
     <h2 class="panel-title">胜利目标</h2>
-    <p class="panel-desc">蛇身长度达到该值即获胜</p>
+    <p class="panel-desc">得分达到该值即获胜</p>
     <div class="stepper">
-      <button class="btn btn-step" id="btn-win-dec" aria-label="减少目标">-</button>
-      <input class="stepper-input" id="win-input" type="number" aria-label="胜利目标数值">
-      <button class="btn btn-step" id="btn-win-inc" aria-label="增加目标">+</button>
+      <input class="stepper-input" id="win-input" type="number" aria-label="胜利目标分数">
+    </div>
+    <div class="stepper-buttons">
+      <button class="btn btn-step" id="btn-win-dec5" aria-label="目标减5分">-5</button>
+      <button class="btn btn-step" id="btn-win-dec1" aria-label="目标减1分">-1</button>
+      <button class="btn btn-step" id="btn-win-inc1" aria-label="目标加1分">+1</button>
+      <button class="btn btn-step" id="btn-win-inc5" aria-label="目标加5分">+5</button>
     </div>
     <div class="presets">
       <button class="btn preset" data-win="20">20</button>
       <button class="btn preset" data-win="50">50</button>
       <button class="btn preset" data-win="100">100</button>
       <button class="btn preset" data-win="200">200</button>
-      <button class="btn preset" data-win="400">400</button>
+      <button class="btn preset" data-win="397">397</button>
     </div>
-    <p class="panel-range">范围 4 ~ 400 · 默认 400</p>
+    <p class="panel-range">范围 1 ~ 397 · 默认 397</p>
   </aside>
   </div>
 
@@ -436,11 +479,15 @@
     const ROWS = canvas.height / CELL;  // 20
 
     // 画布颜色字面量（Canvas 的 fillStyle/strokeStyle 不支持 CSS 变量 var()）
+    // gridAlt 为棋盘格交替色；snake/snakeTail 为蛇身头→尾渐变的起止色；head 为蛇头主色。
     const COLORS = {
-      grid: '#2a2a40',
-      food: '#f87171',
+      gridAlt: '#1c2544',
       snake: '#4ade80',
+      snakeTail: '#15803d',
       head: '#86efac',
+      food: '#f87171',
+      foodLight: '#fca5a5',
+      foodGlow: 'rgba(248, 113, 113, 0.35)',
     };
 
     // ===== DOM 元素 =====
@@ -456,8 +503,10 @@
     const btnTheme = document.getElementById('btn-theme');
     const btnAi = document.getElementById('btn-ai');
     const winInputEl = document.getElementById('win-input');
-    const btnWinDec = document.getElementById('btn-win-dec');
-    const btnWinInc = document.getElementById('btn-win-inc');
+    const btnWinDec5 = document.getElementById('btn-win-dec5');
+    const btnWinDec1 = document.getElementById('btn-win-dec1');
+    const btnWinInc1 = document.getElementById('btn-win-inc1');
+    const btnWinInc5 = document.getElementById('btn-win-inc5');
     const historyTopEl = document.getElementById('history-top');
     const historyFullEl = document.getElementById('history-full');
     const historyEmptyEl = document.getElementById('history-empty');
@@ -670,8 +719,8 @@
       if (ate) {
         score++;
         updateScore();
-        // 长度达到地图容纳上限 → 胜利
-        if (snake.length >= winLength) return win();
+        // 得分达到目标分 → 胜利
+        if (score >= winScore) return win();
         spawnFood();
       }
 
@@ -725,29 +774,29 @@
       renderState();
     }
 
-    // ===== 胜利目标（可配置） =====
-    const WIN_MIN = 4;               // 最小目标（蛇初始长度 3 + 1）
-    const WIN_MAX = COLS * ROWS;     // 地图容纳上限
-    const WIN_DEFAULT = COLS * ROWS; // 默认：填满地图
-    let winLength = WIN_DEFAULT;
+    // ===== 胜利目标（可配置，按得分计） =====
+    const WIN_MIN = 1;               // 最小目标分（吃到 1 个食物即达标）
+    const WIN_MAX = COLS * ROWS - 3; // 可达成上限：填满地图时的最大得分（400 格 - 初始 3 节）
+    const WIN_DEFAULT = WIN_MAX;     // 默认：填满地图
+    let winScore = WIN_DEFAULT;
 
     function clampWin(n) {
       return Math.min(WIN_MAX, Math.max(WIN_MIN, Math.round(n)));
     }
 
-    function setWinLength(n) {
-      winLength = clampWin(n);
-      winInputEl.value = winLength;
-      saveWinLength();
+    function setWinScore(n) {
+      winScore = clampWin(n);
+      winInputEl.value = winScore;
+      saveWinScore();
     }
 
-    function loadWinLength() {
+    function loadWinScore() {
       try { return parseInt(localStorage.getItem('snake-win'), 10); }
       catch { return NaN; }
     }
 
-    function saveWinLength() {
-      try { localStorage.setItem('snake-win', String(winLength)); }
+    function saveWinScore() {
+      try { localStorage.setItem('snake-win', String(winScore)); }
       catch { /* 存储不可用时静默失败 */ }
     }
 
@@ -966,7 +1015,7 @@
       } else if (state === 'win') {
         overlay.classList.remove('hidden');
         overlayTitle.textContent = '胜利！';
-        overlaySub.textContent = `蛇长达到 ${winLength}，得分：${score} 分`;
+        overlaySub.textContent = `得分达到目标 ${winScore} 分，本局得分 ${score} 分`;
         btnPrimary.classList.add('hidden');
         btnRestart.classList.remove('hidden');
         btnPause.textContent = '暂停';
@@ -975,53 +1024,151 @@
     }
 
     // ===== 绘制 =====
-    function draw() {
+    function draw(now = performance.now()) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 网格线
-      ctx.strokeStyle = COLORS.grid;
-      ctx.lineWidth = 1;
-      for (let i = 1; i < COLS; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * CELL, 0);
-        ctx.lineTo(i * CELL, canvas.height);
-        ctx.stroke();
-      }
-      for (let j = 1; j < ROWS; j++) {
-        ctx.beginPath();
-        ctx.moveTo(0, j * CELL);
-        ctx.lineTo(canvas.width, j * CELL);
-        ctx.stroke();
+      // 棋盘格底纹：隔格交替，弱化网格线感、强化格位可读性
+      ctx.fillStyle = COLORS.gridAlt;
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = y % 2; x < COLS; x += 2) {
+          ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+        }
       }
 
-      // 食物
-      ctx.fillStyle = COLORS.food;
-      fillCell(food.x, food.y);
-
-      // 蛇身
-      snake.forEach((seg, i) => {
-        ctx.fillStyle = i === 0 ? COLORS.head : COLORS.snake;
-        fillCell(seg.x, seg.y);
-      });
+      drawFood(now);
+      drawSnake();
     }
 
-    function fillCell(x, y) {
-      ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+    // 圆角矩形路径（手动 arcTo 实现，避免依赖 ctx.roundRect 的兼容性）
+    function roundedRectPath(x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
     }
+
+    // 食物：呼吸脉动 + 径向渐变 + 高光，营造「果实」质感
+    function drawFood(now) {
+      const cx = food.x * CELL + CELL / 2;
+      const cy = food.y * CELL + CELL / 2;
+      const pulse = 1 + 0.1 * Math.sin(now / 280);
+      const r = (CELL / 2 - 2) * pulse;
+
+      // 光晕
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.foodGlow;
+      ctx.fill();
+
+      // 果体：径向渐变从左上高光到主色
+      const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+      g.addColorStop(0, COLORS.foodLight);
+      g.addColorStop(1, COLORS.food);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // 高光点
+      ctx.beginPath();
+      ctx.arc(cx - r * 0.32, cy - r * 0.38, r * 0.26, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.fill();
+    }
+
+    // 蛇身：沿中心点画粗线（圆头），逐段插值颜色，形成连续渐变体
+    function drawSnake() {
+      const len = snake.length;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = CELL - 3;
+      for (let i = 0; i < len - 1; i++) {
+        const t = (i + 1) / (len - 1); // 头端亮 → 尾端暗
+        ctx.strokeStyle = lerpColor(COLORS.snake, COLORS.snakeTail, t);
+        ctx.beginPath();
+        ctx.moveTo(snake[i].x * CELL + CELL / 2, snake[i].y * CELL + CELL / 2);
+        ctx.lineTo(snake[i + 1].x * CELL + CELL / 2, snake[i + 1].y * CELL + CELL / 2);
+        ctx.stroke();
+      }
+      drawHead();
+    }
+
+    // 蛇头：更亮主色的圆角块 + 沿行进方向的两只眼睛
+    function drawHead() {
+      const head = snake[0];
+      const px = head.x * CELL, py = head.y * CELL;
+
+      roundedRectPath(px + 1, py + 1, CELL - 2, CELL - 2, 5);
+      ctx.fillStyle = COLORS.head;
+      ctx.fill();
+
+      const cx = px + CELL / 2, cy = py + CELL / 2;
+      const fx = direction.x, fy = direction.y;   // 前进方向
+      const ox = -fy, oy = fx;                     // 与之垂直
+      const forward = 4.5, side = 4.5, eyeR = 2.6, pupilR = 1.2;
+
+      for (const s of [-1, 1]) {
+        const ex = cx + fx * forward + ox * side * s;
+        const ey = cy + fy * forward + oy * side * s;
+        // 眼白
+        ctx.beginPath();
+        ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        // 瞳孔（略向前偏移，看向行进方向）
+        ctx.beginPath();
+        ctx.arc(ex + fx * 1.4, ey + fy * 1.4, pupilR, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+      }
+    }
+
+    // 十六进制颜色 → RGB（供渐变插值用）
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    // 在 c1、c2 间线性插值，t ∈ [0,1]
+    function lerpColor(c1, c2, t) {
+      const a = hexToRgb(c1);
+      const b = hexToRgb(c2);
+      const r = Math.round(a.r + (b.r - a.r) * t);
+      const g = Math.round(a.g + (b.g - a.g) * t);
+      const bl = Math.round(a.b + (b.b - a.b) * t);
+      return `rgb(${r}, ${g}, ${bl})`;
+    }
+
+    // ===== 持续渲染循环：状态由 step 定时更新，这里每帧重绘以驱动食物呼吸动画 =====
+    function renderLoop(ts) {
+      draw(ts);
+      requestAnimationFrame(renderLoop);
+    }
+    requestAnimationFrame(renderLoop);
 
     // ===== 主题（深色 / 浅色）=====
     const THEMES = {
       dark: {
-        grid: '#2a2a40',
+        gridAlt: '#1c2544',
         snake: '#4ade80',
+        snakeTail: '#15803d',
         head: '#86efac',
         food: '#f87171',
+        foodLight: '#fca5a5',
+        foodGlow: 'rgba(248, 113, 113, 0.35)',
       },
       light: {
-        grid: '#cbd5e1',
+        gridAlt: '#eef2f7',
         snake: '#16a34a',
+        snakeTail: '#166534',
         head: '#22c55e',
         food: '#ef4444',
+        foodLight: '#fca5a5',
+        foodGlow: 'rgba(239, 68, 68, 0.22)',
       },
     };
 
@@ -1040,10 +1187,7 @@
       const isLight = theme === 'light';
       const t = THEMES[isLight ? 'light' : 'dark'];
       document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
-      COLORS.grid = t.grid;
-      COLORS.snake = t.snake;
-      COLORS.head = t.head;
-      COLORS.food = t.food;
+      Object.assign(COLORS, t);
       btnTheme.textContent = isLight ? '主题：浅色' : '主题：深色';
       saveTheme(isLight ? 'light' : 'dark');
       draw();
@@ -1069,8 +1213,10 @@
       btnAi.blur();
       if (aiMode && (state === 'ready' || state === 'over' || state === 'win')) start();
     });
-    btnWinDec.addEventListener('click', () => { setWinLength(winLength - 5); btnWinDec.blur(); });
-    btnWinInc.addEventListener('click', () => { setWinLength(winLength + 5); btnWinInc.blur(); });
+    btnWinDec5.addEventListener('click', () => { setWinScore(winScore - 5); btnWinDec5.blur(); });
+    btnWinDec1.addEventListener('click', () => { setWinScore(winScore - 1); btnWinDec1.blur(); });
+    btnWinInc1.addEventListener('click', () => { setWinScore(winScore + 1); btnWinInc1.blur(); });
+    btnWinInc5.addEventListener('click', () => { setWinScore(winScore + 5); btnWinInc5.blur(); });
     btnHistoryAll.addEventListener('click', () => {
       historyModal.classList.remove('hidden');
       btnHistoryAll.blur();
@@ -1090,23 +1236,23 @@
     });
     winInputEl.addEventListener('change', () => {
       const n = parseInt(winInputEl.value, 10);
-      setWinLength(Number.isNaN(n) ? winLength : n);
+      setWinScore(Number.isNaN(n) ? winScore : n);
     });
     document.querySelectorAll('.preset').forEach((btn) => {
       btn.addEventListener('click', () => {
-        setWinLength(parseInt(btn.dataset.win, 10));
+        setWinScore(parseInt(btn.dataset.win, 10));
         btn.blur();
       });
     });
 
     // ===== 初始化：应用主题 + 恢复胜利目标 + 绘制静止画面 + 显示开始遮罩 =====
     applyTheme(loadTheme() || 'dark');
-    const savedWin = loadWinLength();
-    winLength = clampWin(Number.isFinite(savedWin) ? savedWin : WIN_DEFAULT);
+    const savedWin = loadWinScore();
+    winScore = clampWin(Number.isFinite(savedWin) ? savedWin : WIN_DEFAULT);
     winInputEl.min = WIN_MIN;
     winInputEl.max = WIN_MAX;
-    winInputEl.step = 5;
-    winInputEl.value = winLength;
+    winInputEl.step = 1;
+    winInputEl.value = winScore;
     renderState();
     renderHistory();
     renderValidity();
