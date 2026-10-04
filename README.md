@@ -1,6 +1,7 @@
 **关于电路图**：本项目的五张电路图（`rc_circuit.png`、`thevenin_network.png`、`mos_circuit.png`、
 `mos_dc_path.png`、`mos_small_signal.png`）目前由 `draw_circuits.py` 用程序绘制，
 **属于 AI 协助生成的版本**，用于先跑通仿真链路、核对参数。
+
 **手绘版本将在学完三个电路对应的原理后补交**，作为「电路图自己画」的正式交付。
 
 # 网页端贪吃蛇小游戏
