@@ -1,3 +1,8 @@
+**关于电路图**：本项目的五张电路图（`rc_circuit.png`、`thevenin_network.png`、`mos_circuit.png`、
+`mos_dc_path.png`、`mos_small_signal.png`）目前由 `draw_circuits.py` 用程序绘制，
+**属于 AI 协助生成的版本**，用于先跑通仿真链路、核对参数。
+**手绘版本将在学完三个电路对应的原理后补交**，作为「电路图自己画」的正式交付。
+
 # 网页端贪吃蛇小游戏
 
 使用ai开发和管理仓库的网页贪吃蛇游戏，基于html，css与JavaScript。
@@ -78,10 +83,6 @@ cd指choose directory，用于切换工作目录；ls指list，用于列出目�
 > 用 PySpice + ngspice 对三个电路做「手算 → 仿真 → 对比表 → 误差分析」的完整闭环验证。
 > 代码、电路图与波形图都在本仓库的 `pyspice-circuits/` 目录下，运行方式见各脚本头部的说明。
 
-**关于电路图**：本项目的五张电路图（`rc_circuit.png`、`thevenin_network.png`、`mos_circuit.png`、
-`mos_dc_path.png`、`mos_small_signal.png`）目前由 `draw_circuits.py` 用程序绘制，
-**属于 AI 协助生成的版本**，用于先跑通仿真链路、核对参数。
-**手绘版本将在学完三个电路对应的原理后补交**，作为「电路图自己画」的正式交付。
 
 | 电路 | 脚本 | 核心结论 |
 |---|---|---|
