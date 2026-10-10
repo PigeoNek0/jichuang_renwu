@@ -1,6 +1,5 @@
 **关于电路图**：本项目的五张电路图（`rc_circuit.png`、`thevenin_network.png`、`mos_circuit.png`、
-`mos_dc_path.png`、`mos_small_signal.png`）由 `draw_circuits.py` 用程序绘制，
-**属于 AI 协助生成的版本**，用于先跑通仿真链路、核对参数。
+`mos_dc_path.png`、`mos_small_signal.png`）由 `draw_circuits.py` 用程序绘制。
 **手绘原稿另附**（任务书要求「电路图自己画」，三题的电路图均以手绘稿为准）：
 `pyspice-circuits/images/1.jpg`（电路① 的 RC 低通电路 + 电路② 的含源二端网络）、
 `pyspice-circuits/images/2.jpg`（电路③ 的共源放大电路）。
