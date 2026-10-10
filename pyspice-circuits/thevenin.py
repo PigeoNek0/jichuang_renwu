@@ -9,14 +9,25 @@
     python thevenin.py
 
 被测网络（含源二端网络，端口为 A 与 GND，A 为 +）：
+两条 R-V 串联支路并联在端口上（手绘原图见 README 2.1）：
 
-        ┌── R1(1k) ──┬── R2(2k) ──┐
-  V1(12V)             │            │
-                    [A] 端口(+)   GND
-                      │
-                    R3(3k)
-                      │
-                   V2(4V)
+        端口 A（+）
+          ●
+          │
+    ┌─────┴─────┐
+    │           │
+ [ R1 1k ]   [ R2 3k ]
+    │           │
+ [ V1 12V ]  [ V2 4V ]      ← 两个电源正极均朝上（接电阻那一侧）
+    │           │
+    └─────┬─────┘
+          ⏚ GND（端口 −）
+
+写成网表就是两条支路并联：
+  A — R1(1k) — n1 — V1(12V) — GND
+  A — R2(3k) — n2 — V2(4V)  — GND
+
+手算结果：V_oc = 10 V，R_th = 750 ohm，I_sc = 13.3333 mA
 
 方法说明：
   测 V_oc —— 端口开路（并联 1GΩ 假负载防止浮空节点报 "no DC path to ground"）
@@ -40,10 +51,9 @@ try:
 except ImportError:
     sys.exit("缺少 matplotlib,请先安装:pip install matplotlib")
 
-# ---------------------------------------------------------------- 网络参数（自定）
-V1, R1 = 12.0, 1e3
-V2, R3 = 4.0, 3e3
-R2 = 2e3
+# ---------------------------------------------------------------- 网络参数（对应手绘原图）
+V1, R1 = 12.0, 1e3   # 支路 1：1 kΩ 串 12 V
+V2, R2 = 4.0, 3e3    # 支路 2：3 kΩ 串 4 V
 FAKE_LOAD = 1e9      # 1 GΩ 假负载，仅用于"端口开路"时给浮空节点一条直流通路
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
@@ -57,18 +67,17 @@ def make_sim(circuit):
 
 
 def network(port=None):
-    """搭含源二端网络。
+    """搭含源二端网络（两条 R-V 支路并联）。
 
     port=None    -> 端口开路（自动加 1GΩ 假负载）
     port='short' -> 端口接 0V 电压源当电流表
     port=<数值>  -> 端口接该阻值的负载 R_L
     """
     c = Circuit("thevenin network")
-    c.V("1", "n1", c.gnd, V1 @ u_V)
+    c.V("1", "n1", c.gnd, V1 @ u_V)      # V1 正极接 n1（朝上）
     c.R("1", "n1", "a", R1 @ u_Ohm)
-    c.R("2", "a", c.gnd, R2 @ u_Ohm)
-    c.V("2", "n2", c.gnd, V2 @ u_V)
-    c.R("3", "a", "n2", R3 @ u_Ohm)
+    c.V("2", "n2", c.gnd, V2 @ u_V)      # V2 正极接 n2（朝上）
+    c.R("2", "a", "n2", R2 @ u_Ohm)
     if port is None:
         c.R("fake", "a", c.gnd, FAKE_LOAD @ u_Ohm)
     elif port == "short":
@@ -91,25 +100,28 @@ def equivalent(r_load):
 print("=" * 68)
 print("电路② 戴维南定理验证")
 print("=" * 68)
-print(f"网络参数: V1 = {V1:g} V, R1 = {R1/1e3:g} kohm")
-print(f"          V2 = {V2:g} V, R2 = {R2/1e3:g} kohm, R3 = {R3/1e3:g} kohm")
+print(f"网络参数: V1 = {V1:g} V, R1 = {R1/1e3:g} kohm   (支路 1)")
+print(f"          V2 = {V2:g} V, R2 = {R2/1e3:g} kohm   (支路 2)")
 print()
-print("[手算] 对端口节点 A 写 KCL（流出为正）：")
-print(f"       (V_A - {V1:g})/{R1/1e3:g}k + V_A/{R2/1e3:g}k + (V_A - {V2:g})/{R3/1e3:g}k = 0")
-print(f"       两边同乘 {R1*R2*R3/1e6:.0f}k 的等效系数，解得：")
+print("[手算] 对端口节点 A 写 KCL（流出为正）——开路时端口无电流，两条支路电流之和为零：")
+print(f"       (V_A - {V1:g})/{R1/1e3:g}k + (V_A - {V2:g})/{R2/1e3:g}k = 0")
+print(f"       两边同乘 {R2/1e3:g}k：{R2/1e3:g}(V_A - {V1:g}) + (V_A - {V2:g}) = 0 -> "
+      f"{R2/1e3+1:g}*V_A = {V1*R2/1e3 + V2:g}")
 
-# (V_A-V1)/R1 + V_A/R2 + (V_A-V2)/R3 = 0
-G1, G2, G3 = 1.0 / R1, 1.0 / R2, 1.0 / R3
-VTH = (V1 * G1 + V2 * G3) / (G1 + G2 + G3)
-RTH = 1.0 / (G1 + G2 + G3)
+# (V_A-V1)/R1 + (V_A-V2)/R2 = 0
+G1, G2 = 1.0 / R1, 1.0 / R2
+VTH = (V1 * G1 + V2 * G2) / (G1 + G2)
+RTH = 1.0 / (G1 + G2)
 ISC = VTH / RTH
 
-print(f"       V_A = (V1*G1 + V2*G3) / (G1+G2+G3) = {VTH:.6f} V")
+print(f"       V_A = (V1*G1 + V2*G2) / (G1+G2) = {VTH:.6f} V")
 print(f"       -> V_th = V_oc = {VTH:.6f} V")
 print()
-print(f"[手算] 独立源置零后 R_th = R1//R2//R3 = {RTH:.6f} ohm")
+print(f"[手算] 独立源置零后 R_th = R1//R2 = {RTH:.6f} ohm")
 print(f"[手算] I_sc = V_th / R_th = {ISC*1e3:.6f} mA")
-print("       自检：11*V_A = 80 -> V_A = 7.272727 V, R_th = 545.4545 ohm, I_sc = 13.3333 mA")
+print(f"       自检（叠加法）：V_oc = {V1:g}*{R2/1e3:g}/({R1/1e3:g}+{R2/1e3:g})"
+      f" + {V2:g}*{R1/1e3:g}/({R1/1e3:g}+{R2/1e3:g})"
+      f" = {V1*R2/(R1+R2):g} + {V2*R1/(R1+R2):g} = {VTH:g} V")
 print()
 
 # ================================================================ 2. 测开路电压 V_oc
@@ -126,8 +138,7 @@ isc = float(np.asarray(op_sc.branches["vsc"]).ravel()[0])
 # 内部独立源全部置零：电压源 -> 短路（0V 源）；端口外加 1A 电流源灌入
 c_ext = Circuit("excitation method")
 c_ext.R("1", "n1", "a", R1 @ u_Ohm)
-c_ext.R("2", "a", c_ext.gnd, R2 @ u_Ohm)
-c_ext.R("3", "a", "n2", R3 @ u_Ohm)
+c_ext.R("2", "a", "n2", R2 @ u_Ohm)
 c_ext.V("1", "n1", c_ext.gnd, 0 @ u_V)      # V1 置零 = 短路
 c_ext.V("2", "n2", c_ext.gnd, 0 @ u_V)      # V2 置零 = 短路
 c_ext.I("inject", c_ext.gnd, "a", 1 @ u_A)  # 1A 灌入端口
@@ -145,6 +156,9 @@ print(f"  V_oc   : 手算 {VTH:12.6f} V    仿真 {voc:12.6f} V    误差 {err(v
 print(f"  I_sc   : 手算 {ISC*1e3:12.6f} mA   仿真 {isc*1e3:12.6f} mA   误差 {err(isc, ISC):6.4f}%")
 print(f"  R_th   : 手算 {RTH:12.6f} ohm  激励法 {rth_ext:12.6f} ohm  误差 {err(rth_ext, RTH):6.4f}%")
 print(f"           （定义法 V_oc/I_sc = {voc/isc:.6f} ohm，与激励法互验）")
+print(f"           注：开路时并联的 1GΩ 假负载会让 V_oc 偏低 {RTH/(RTH+FAKE_LOAD):.2e}"
+      f"（即 {RTH/(RTH+FAKE_LOAD)*100:.6f}%），")
+print(f"              这正是上表 V_oc 那一行误差的全部来源，不是求解器容差。")
 print()
 
 # ================================================================ 5. 负载验证表
@@ -169,8 +183,8 @@ for rl in LOADS:
     rows.append((rl, va, vb, ia, ib, same))
     print(f"{rl:>10.1f}{va:>13.6f}{vb:>13.6f}{ia*1e3:>15.6f}{ib*1e3:>15.6f}{same:>7}")
 print("-" * 68)
-print("注：两条 V 列的差异在 1e-6 V 量级，是 ngspice 的数值求解容差，不是物理差异。")
-print("    本电路是纯线性电阻网络，SPICE 的方程与手算完全同构，理论上应严格相等。")
+print(f"注：两条 V 列的差异在 1e-6 V 量级，是 ngspice 的数值求解容差，不是物理差异。")
+print(f"    R_L = R_th = {RTH:g} ohm 时端口电压恰为 V_oc/2 = {VTH/2:.6f} V（最大功率传输点）。")
 print()
 
 # ================================================================ 6. 端口伏安特性曲线
@@ -185,15 +199,14 @@ def iv_curve(kind):
     if kind == "original":
         c.V("1", "n1", c.gnd, V1 @ u_V)
         c.R("1", "n1", "a", R1 @ u_Ohm)
-        c.R("2", "a", c.gnd, R2 @ u_Ohm)
         c.V("2", "n2", c.gnd, V2 @ u_V)
-        c.R("3", "a", "n2", R3 @ u_Ohm)
+        c.R("2", "a", "n2", R2 @ u_Ohm)
     else:
         c.V("th", "t", c.gnd, VTH @ u_V)
         c.R("th", "t", "a", RTH @ u_Ohm)
     c.V("p", "a", c.gnd, 0 @ u_V)      # 端口电压源，用 .dc 扫它
-    # ⚠️ .dc 的正确语法：值是 slice 对象，键是元件名
-    an = make_sim(c).dc(Vp=slice(-2, 9, 0.2))
+    # ⚠️ .dc 的正确语法：值是 slice 对象，键是元件名；扫到 12 V 才能盖住 V_oc = 10 V
+    an = make_sim(c).dc(Vp=slice(-2, 12.01, 0.25))
     v = np.asarray(an.nodes["a"])
     i = np.asarray(an.branches["vp"])   # SPICE 约定：流入 + 端的电流
     return v, i
@@ -214,7 +227,7 @@ ax.annotate(f"short circuit\nI_sc = {isc*1e3:.2f} mA", xy=(0, isc * 1e3),
             arrowprops=dict(arrowstyle="->", color="tab:green", lw=1))
 ax.plot([VTH], [0], "s", color="tab:purple", ms=7, zorder=5)
 ax.annotate(f"open circuit\nV_oc = {VTH:.3f} V", xy=(VTH, 0),
-            xytext=(VTH - 3.4, 1.6), color="tab:purple", fontsize=9,
+            xytext=(VTH - 4.4, 1.6), color="tab:purple", fontsize=9,
             arrowprops=dict(arrowstyle="->", color="tab:purple", lw=1))
 ax.axhline(0, color="gray", lw=0.8)
 ax.axvline(0, color="gray", lw=0.8)
