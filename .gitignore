@@ -19,3 +19,6 @@ mplcache/
 .idea/
 .DS_Store
 Thumbs.db
+
+# 说明：本机专属的忽略项（学习笔记、个人材料等）不写在这里，而是放在 .git/info/exclude，
+#       免得那些文件名随仓库公开。本文件只保留「换台机器 clone 下来也需要」的通则。
