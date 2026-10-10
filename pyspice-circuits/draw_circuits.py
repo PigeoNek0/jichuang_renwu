@@ -285,40 +285,43 @@ def draw_rc():
 
 # ================================================================ 电路② 戴维南
 def draw_thevenin():
-    fig, ax = plt.subplots(figsize=(8.2, 5.2))
-    YA, YB = 3.2, 0.0            # 节点 A  /  接地轨
-    XN1, XR1L, XR1R, XA = 1.2, 2.4, 4.0, 5.2
-    XR3, XR2 = 5.2, 7.0          # R3 在 A 正下方, R2 在右侧
+    """电路② 含源二端网络：两条 R-V 串联支路并联，端口在右侧（A 为 +）。
 
-    # ---- 左侧支路：V1(12V) —— R1 —— A
-    v_source(ax, XN1, YB, YA, label="$V_1$", value="12 V", glyph="dc", side=-1)
-    wire(ax, (XN1, YA), (XR1L, YA))
-    resistor(ax, XR1L, YA, XR1R, YA, label="$R_1$", value="1 kΩ", side=1)
-    wire(ax, (XR1R, YA), (XA, YA))
-    node_dot(ax, XA, YA)
+    拓扑与手绘原图一致：
+        A —— R1(1k) —— n1 —— V1(12V, 正极朝上) —— GND
+        A —— R2(3k) —— n2 —— V2(4V,  正极朝上) —— GND
+    """
+    fig, ax = plt.subplots(figsize=(8.6, 5.2))
+    Y_TOP, Y_MID, Y_BOT = 3.9, 2.3, 0.0      # 上轨 / 电阻与电源的分界 / 下轨
+    X1, X2 = 2.0, 4.6                        # 两条支路的 x
+    X_GND, X_PORT = 1.1, 6.8                 # 接地引出点 / 端口端子
 
-    # ---- 下支路：A —— R3 —— n2 —— V2(4V) —— 地
-    resistor(ax, XR3, YA, XR3, 1.75, label="$R_3$", value="3 kΩ", side=1)
-    v_source(ax, XR3, YB, 1.75, label="$V_2$", value="4 V", glyph="dc", side=1, r=0.7)
-    node_dot(ax, XR3, YB)
+    # ---- 上轨（端口 +）与下轨（端口 −）
+    wire(ax, (X1, Y_TOP), (X_PORT, Y_TOP))
+    wire(ax, (X_GND, Y_BOT), (X_PORT, Y_BOT))
+    for x in (X1, X2):
+        node_dot(ax, x, Y_TOP)               # 支路与上轨的接点
+    for x in (X1, X_GND, X2):
+        node_dot(ax, x, Y_BOT)               # 支路与下轨的接点
 
-    # ---- 右支路：A —— R2 —— 地
-    wire(ax, (XA, YA), (XR2, YA))
-    node_dot(ax, XR2, YA)
-    resistor(ax, XR2, YA, XR2, YB, label="$R_2$", value="2 kΩ", side=1)
-    node_dot(ax, XR2, YB)
+    # ---- 支路 1：R1(1k) 串 V1(12V)
+    resistor(ax, X1, Y_TOP, X1, Y_MID, label="$R_1$", value="1 kΩ", side=-1)
+    v_source(ax, X1, Y_BOT, Y_MID, label="$V_1$", value="12 V", glyph="dc", side=1, r=0.6)
 
-    # ---- 下轨与接地
-    wire(ax, (XN1, YB), (XR2, YB))
-    ground(ax, (XN1 + XR2) / 2, YB, label="GND（端口 −）")
+    # ---- 支路 2：R2(3k) 串 V2(4V)
+    resistor(ax, X2, Y_TOP, X2, Y_MID, label="$R_2$", value="3 kΩ", side=1)
+    v_source(ax, X2, Y_BOT, Y_MID, label="$V_2$", value="4 V", glyph="dc", side=1, r=0.6)
 
-    # ---- 端口 A（+）：从 A 引出一个开口端子
-    wire(ax, (XA, YA), (XA, YA + 0.9))
-    terminal(ax, XA, YA + 0.9, "端口 A（+）", dy=0.28)
+    # ---- 接地（下轨即端口 −）
+    ground(ax, X_GND, Y_BOT, label="GND（端口 −）")
 
-    finish(ax, "电路②  含源二端网络（端口为 A 与 GND）\n"
+    # ---- 端口端子
+    terminal(ax, X_PORT, Y_TOP, "端口 A（+）", dy=0.30)
+    terminal(ax, X_PORT, Y_BOT, "端口 −", dy=-0.32, va="top")
+
+    finish(ax, "电路②  含源二端网络（两条 $R$-$V$ 支路并联，端口为 A 与 GND）\n"
                "求 $V_{oc}$、$I_{sc}$、$R_{th}$，再用戴维南等效替换后接负载验证",
-           (-1.4, 9.6), (-1.5, 5.2))
+           (-1.3, 9.4), (-1.8, 5.6))
     save(fig, "thevenin_network.png")
 
 
